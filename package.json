@@ -28,12 +28,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-username/bestdns.git"
+    "url": "git+https://github.com/hashcott/bestdns.git"
   },
   "bugs": {
-    "url": "https://github.com/your-username/bestdns/issues"
+    "url": "https://github.com/hashcott/bestdns/issues"
   },
-  "homepage": "https://github.com/your-username/bestdns#readme",
+  "homepage": "https://github.com/hashcott/bestdns#readme",
   "scripts": {
     "dev": "bun run src/index.ts",
     "start": "bun run src/index.ts",
