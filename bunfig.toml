@@ -1,0 +1,8 @@
+# Bun configuration — https://bun.sh/docs/runtime/bunfig
+[install]
+# Use a caret range save strategy so semantic-release stays happy.
+exact = false
+
+[test]
+# Network-dependent tests can be slow; give them headroom.
+timeout = 20000

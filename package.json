@@ -1,0 +1,72 @@
+{
+  "name": "bestdns",
+  "version": "0.0.0-development",
+  "description": "Find, benchmark, and apply the best DNS server for your network — a cross-platform CLI.",
+  "keywords": [
+    "dns",
+    "benchmark",
+    "cli",
+    "networking",
+    "dns-over-https",
+    "doh",
+    "latency",
+    "speed-test",
+    "adguard",
+    "cloudflare"
+  ],
+  "license": "MIT",
+  "author": "bestdns contributors <tech@congtytmz.com>",
+  "type": "module",
+  "bin": {
+    "bestdns": "./dist/bestdns.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-username/bestdns.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/bestdns/issues"
+  },
+  "homepage": "https://github.com/your-username/bestdns#readme",
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "start": "bun run src/index.ts",
+    "build": "bun build src/index.ts --target=node --outfile=dist/bestdns.js",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "lint": "biome check src test",
+    "lint:fix": "biome check --write src test",
+    "format": "biome format --write src test",
+    "prepublishOnly": "bun run build",
+    "prepare": "husky || true"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@clack/prompts": "^0.10.0",
+    "@commitlint/cli": "^19.6.1",
+    "@commitlint/config-conventional": "^19.6.0",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@types/bun": "latest",
+    "@types/node": "^22.10.5",
+    "@types/update-notifier": "^6.0.8",
+    "cli-table3": "^0.6.5",
+    "commander": "^13.0.0",
+    "env-paths": "^3.0.0",
+    "husky": "^9.1.7",
+    "picocolors": "^1.1.1",
+    "semantic-release": "^24.2.1",
+    "typescript": "^5.7.3",
+    "update-notifier": "^7.3.1"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}
