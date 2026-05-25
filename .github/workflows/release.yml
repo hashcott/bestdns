@@ -20,6 +20,12 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    # Skip Husky hook installation in CI. Without this, the commit-msg hook
+    # runs commitlint against semantic-release's own release commit
+    # (`chore(release): x.y.z [skip ci]`), whose auto-generated body contains
+    # long URLs that exceed body-max-line-length.
+    env:
+      HUSKY: "0"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
