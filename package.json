@@ -1,6 +1,6 @@
 {
   "name": "bestdns",
-  "version": "0.0.0-development",
+  "version": "1.0.0",
   "description": "Find, benchmark, and apply the best DNS server for your network — a cross-platform CLI.",
   "keywords": [
     "dns",
