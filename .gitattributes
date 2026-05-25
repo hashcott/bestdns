@@ -1,0 +1,34 @@
+# Force LF line endings in the working tree for every text file, on every OS.
+# Without this, Windows clones (with the default core.autocrlf=true) convert
+# LF -> CRLF on checkout, which Biome's formatter then flags in CI.
+* text=auto eol=lf
+
+# Source — always LF.
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.js    text eol=lf
+*.cjs   text eol=lf
+*.mjs   text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.toml  text eol=lf
+*.html  text eol=lf
+*.css   text eol=lf
+
+# Shell scripts and the Husky hook must keep LF — CRLF breaks `sh`.
+*.sh         text eol=lf
+.husky/*     text eol=lf
+
+# The bundled CLI ships a node shebang — must be LF.
+dist/bestdns.js text eol=lf
+
+# Known binary types — never touch.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.webp binary
+*.lockb binary
