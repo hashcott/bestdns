@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/hashcott/bestdns/compare/v1.0.0...v1.0.1) (2026-05-25)
+
+
+### Bug Fixes
+
+* only show update-notifier when stdout is a terminal ([4cc3c7b](https://github.com/hashcott/bestdns/commit/4cc3c7b9a8baebdd68d823c8ed28f3d8228fccc5))
+
 # 1.0.0 (2026-05-25)
 
 
