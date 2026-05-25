@@ -19,7 +19,9 @@ function checkForUpdates(): void {
 }
 
 async function main(): Promise<void> {
-  checkForUpdates();
+  // Only nag about updates when a human is actually watching — keeps `--json`
+  // output clean and avoids noise in CI pipelines.
+  if (process.stdout.isTTY) checkForUpdates();
 
   const args = process.argv.slice(2);
 
