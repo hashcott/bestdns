@@ -105,7 +105,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: "true"
-          # Verbose plugin output to pinpoint which step (verifyConditions,
-          # prepare, publish…) fails and why.
+          # Provenance is disabled while we get the first publish working —
+          # provenance signing left bestdns@1.0.0 in a half-published state.
+          # Re-enable later by adding NPM_CONFIG_PROVENANCE back here and
+          # `"provenance": true` to publishConfig in package.json.
+          NPM_CONFIG_PROVENANCE: "false"
+          # Verbose plugin + raw npm output so we can see exactly what
+          # `npm publish` does (or what it complains about).
           DEBUG: "semantic-release:*"
+          NPM_CONFIG_LOGLEVEL: "verbose"
