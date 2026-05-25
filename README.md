@@ -133,8 +133,12 @@ Releases are fully automated with
 
 **One-time repository setup:**
 
-- Add an `NPM_TOKEN` secret (an npm automation token) under
-  *Settings → Secrets and variables → Actions*.
+- Register the GitHub Actions workflow as a **Trusted Publisher** on npm:
+  log in to [npmjs.com](https://www.npmjs.com/), open *Profile → Trusted
+  Publishers → Add a new publisher*, then enter the package name (`bestdns`),
+  the repository (`<owner>/<repo>`), and the workflow filename (`release.yml`).
+  No long-lived npm token is needed — CI authenticates via short-lived OIDC
+  tokens, and provenance is signed automatically.
 - Update the `repository`, `bugs` and `homepage` fields in `package.json` to
   point at your GitHub repository.
 
