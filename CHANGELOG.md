@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/hashcott/bestdns/compare/v1.1.0...v1.1.1) (2026-05-29)
+
+
+### Bug Fixes
+
+* enhance README with detailed optimization process ([c6fffac](https://github.com/hashcott/bestdns/commit/c6fffacd8e0e79c496a32e826bdd344d5e964416))
+
 # [1.1.0](https://github.com/hashcott/bestdns/compare/v1.0.1...v1.1.0) (2026-05-29)
 
 
