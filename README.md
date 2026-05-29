@@ -31,6 +31,8 @@ npx bestdns
 - [Installation](#installation)
 - [Usage](#usage)
 - [Commands](#commands)
+  - [`bestdns optimize`](#bestdns-optimize) — full optimization flow
+  - [`bestdns diagnose`](#bestdns-diagnose) — read-only checkup
 - [Provider catalog](#provider-catalog)
 - [Health checks](#health-checks)
 - [Configuration & data files](#configuration--data-files)
@@ -59,6 +61,12 @@ supports DNS-over-HTTPS — so "fastest" isn't the only thing you optimise for.
 
 ## Features
 
+- 🛠 **Optimize** — full network optimization flow: baseline snapshot → walk through
+  auto-fixable findings (DNS swap, cache flush, mDNS restart) → re-test for a
+  side-by-side before/after.
+- 🔬 **Diagnose** — read-only network checkup: download speed, latency, packet loss,
+  path MTU, Wi-Fi signal, and current DNS performance, all with severity-ranked
+  findings.
 - 🔍 **Benchmark** — measures latency, jitter and reliability across a curated catalog
   of public resolvers and ranks them fastest-first.
 - ⚡ **Auto** — benchmark and apply the fastest provider in a single command.
@@ -159,6 +167,8 @@ bestdns apply cloudflare --dry-run
 | Command | Description |
 | --- | --- |
 | `bestdns` | Open the interactive menu |
+| `bestdns optimize` | Diagnose, apply auto-fixes, re-test (before/after) |
+| `bestdns diagnose` | Read-only network checkup (alias: `doctor`) |
 | `bestdns auto` | Benchmark every provider and apply the fastest |
 | `bestdns benchmark` | Benchmark providers and rank them by speed |
 | `bestdns apply <provider>` | Apply a DNS provider to your network |
@@ -167,6 +177,90 @@ bestdns apply cloudflare --dry-run
 | `bestdns list` | Browse and manage the provider catalog |
 | `bestdns restore` | Restore DNS to automatic (DHCP) |
 | `bestdns menu` | Force-open the interactive menu (even with args) |
+
+### `bestdns optimize`
+
+End-to-end network optimization in three phases:
+
+1. **Baseline snapshot** — runs every diagnostic check and lists findings.
+2. **Apply auto-fixes** — walks through each auto-fixable finding (swap DNS, flush
+   DNS cache, restart mDNSResponder on macOS) with per-step confirmation.
+3. **Re-test** — takes a second snapshot and prints a before/after comparison.
+
+```text
+-y, --yes              apply every offered fix without confirming
+    --no-speedtest     skip the download speedtest in both snapshots
+    --no-mtu           skip the path-MTU probe
+    --no-retest        skip the second (after) snapshot
+```
+
+```bash
+bestdns optimize                           # interactive flow with confirmations
+bestdns optimize --yes                     # apply every offered fix
+bestdns optimize --no-speedtest --no-mtu   # quick run: skip the slow checks
+```
+
+What each auto-fix actually does:
+
+| Fix | What runs | Privilege |
+| --- | --- | --- |
+| **Swap DNS** | Internally calls `bestdns auto` — benchmark and apply the fastest provider to the active network service | `sudo` / UAC |
+| **Flush DNS cache** | macOS: `dscacheutil -flushcache && killall -HUP mDNSResponder` · Linux: `resolvectl flush-caches` (fallback `nscd -i hosts`) · Windows: `ipconfig /flushdns` | `sudo` on macOS / Linux |
+| **Restart mDNSResponder** | `launchctl kickstart -k system/com.apple.mDNSResponder` | `sudo`, macOS only |
+
+### `bestdns diagnose`
+
+Read-only network checkup — useful for "is it me or the network?" before changing
+anything. Runs everything `optimize` runs, but applies nothing.
+
+```text
+    --no-speedtest     skip the download speedtest
+    --no-mtu           skip the path-MTU probe
+    --json             output machine-readable JSON
+```
+
+```bash
+bestdns diagnose                           # full report
+bestdns diagnose --no-speedtest --no-mtu   # quick (~3 s) check
+bestdns diagnose --json | jq '.findings'   # pipe findings into another tool
+bestdns doctor                             # alias
+```
+
+What it measures:
+
+| Check | How |
+| --- | --- |
+| **Download speed** | Streams up to 50 MB from Cloudflare's public speedtest endpoint with an 8-second deadline. |
+| **Latency** | 4 pings each to `1.1.1.1`, `8.8.8.8`, `github.com`. |
+| **Packet loss** | 20 pings to `1.1.1.1`. |
+| **Path MTU** | DF-bit pings at common candidate sizes (1500 → 1280). |
+| **Wi-Fi signal** | Native tools: `airport -I` on macOS, `iw dev` on Linux, `netsh wlan show interfaces` on Windows. |
+| **Current DNS** | Three quick lookups against the active resolver. |
+
+Findings are sorted by severity (`ISSUE` → `WARN` → `INFO` → `OK`) and tagged
+*"auto-fix available"* when `optimize` can resolve them.
+
+Example output:
+
+```text
+Download      124.8 Mbps (50.0 MB in 3.4 s)
+Latency       42 ms avg across 3 target(s)
+Packet loss   0.0% (20/20 to 1.1.1.1)
+Path MTU      1492
+Current DNS   8.8.8.8, 8.8.4.4 (30 ms avg)
+
+┌───┬─────────┬────────────────────────────────┬─────────────────────────────────────┐
+│   │ Severity│ Finding                        │ Detail                              │
+├───┼─────────┼────────────────────────────────┼─────────────────────────────────────┤
+│ ℹ │ INFO    │ Path MTU is 1492               │ Common when on PPPoE, GRE or a VPN  │
+│ ℹ │ INFO    │ Flush the OS DNS cache         │ (auto-fix available)                │
+│ ℹ │ INFO    │ Restart mDNSResponder          │ (auto-fix available)                │
+│ ✔ │ OK      │ Download throughput is healthy │ Measured 124.8 Mbps over 3.4 s.     │
+│ ✔ │ OK      │ No packet loss                 │ 20/20 packets received from 1.1.1.1 │
+│ ✔ │ OK      │ Internet latency looks fine    │ 42 ms average across 3 hosts.       │
+│ ✔ │ OK      │ Current DNS is fast            │ Current resolver averages 30 ms.    │
+└───┴─────────┴────────────────────────────────┴─────────────────────────────────────┘
+```
 
 ### `bestdns benchmark`
 
@@ -442,6 +536,12 @@ Releases are fully automated by
 
 Ideas welcome — open an issue if you want to take any of these on:
 
+- [x] End-to-end network optimization flow (`optimize`) — shipped in 1.1.0
+- [x] Read-only diagnostic mode (`diagnose`) — shipped in 1.1.0
+- [ ] Wi-Fi info on modern macOS via `wdutil` / `SPAirPortDataType` JSON
+      (`airport -I` was removed in recent versions)
+- [ ] Bandwidth-hog process listing (`nettop` / `nethogs` / `Get-NetTCPConnection`)
+- [ ] Network locations / Wi-Fi profile cleanup helpers
 - [ ] DoT / DoH apply on macOS via configuration profiles
 - [ ] DoH benchmarking as a first-class result column
 - [ ] Per-network-profile presets ("work", "home", "travel")
