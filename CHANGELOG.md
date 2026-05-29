@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/hashcott/bestdns/compare/v1.0.1...v1.1.0) (2026-05-29)
+
+
+### Features
+
+* add network optimization flow with diagnose and optimize commands ([eb3c049](https://github.com/hashcott/bestdns/commit/eb3c0496aaf21c030d69dc5a2b4fca23ac80fd43))
+
 ## [1.0.1](https://github.com/hashcott/bestdns/compare/v1.0.0...v1.0.1) (2026-05-25)
 
 
