@@ -61,6 +61,17 @@ supports DNS-over-HTTPS — so "fastest" isn't the only thing you optimise for.
 
 ## Features
 
+> It was a simple goal — make the internet faster.
+>
+> Ran a speedtest. Checked DNS resolution times. Probed the path MTU,
+> measured packet loss, read Wi-Fi signal strength and channel interference.
+> Found three issues. Flushed a stale DNS cache. Restarted mDNSResponder.
+> Swapped the resolver for the fastest one on the network.
+> Ran the whole thing again to prove the numbers actually moved.
+>
+> No AI. No cloud API. No black box. Just the network stack, a handful of
+> shell commands, and an honest before/after comparison.
+
 - 🛠 **Optimize** — full network optimization flow: baseline snapshot → walk through
   auto-fixable findings (DNS swap, cache flush, mDNS restart) → re-test for a
   side-by-side before/after.
