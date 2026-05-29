@@ -3,8 +3,10 @@ import { runApply } from "./commands/apply";
 import { runAuto } from "./commands/auto";
 import { runBenchmark } from "./commands/benchmark";
 import { runCurrent } from "./commands/current";
+import { runDiagnose } from "./commands/diagnose";
 import { runHealth } from "./commands/health";
 import { type ListAction, runList } from "./commands/list";
+import { runOptimize } from "./commands/optimize";
 import { runRestore } from "./commands/restore";
 import { guard } from "./ui/prompts";
 import { c } from "./ui/theme";
@@ -41,6 +43,8 @@ export async function runInteractiveMenu(): Promise<void> {
         message: "What would you like to do?",
         options: [
           { value: "auto", label: "⚡ Auto — benchmark & apply the fastest", hint: "recommended" },
+          { value: "optimize", label: "🛠  Optimize network — diagnose, fix, re-test" },
+          { value: "diagnose", label: "🔬 Diagnose network — read-only report" },
           { value: "benchmark", label: "🔍 Benchmark DNS providers" },
           { value: "current", label: "📡 Show current DNS" },
           { value: "apply", label: "🎯 Apply a DNS provider" },
@@ -55,6 +59,12 @@ export async function runInteractiveMenu(): Promise<void> {
     switch (action) {
       case "auto":
         await runAuto({ interactive: true });
+        break;
+      case "optimize":
+        await runOptimize({ interactive: true });
+        break;
+      case "diagnose":
+        await runDiagnose();
         break;
       case "benchmark":
         await runBenchmark({ interactive: true });

@@ -3,8 +3,10 @@ import { runApply } from "./commands/apply";
 import { runAuto } from "./commands/auto";
 import { runBenchmark } from "./commands/benchmark";
 import { runCurrent } from "./commands/current";
+import { runDiagnose } from "./commands/diagnose";
 import { runHealth } from "./commands/health";
 import { runList } from "./commands/list";
+import { runOptimize } from "./commands/optimize";
 import { runRestore } from "./commands/restore";
 import { runInteractiveMenu } from "./menu";
 import type { ProviderGroup } from "./types";
@@ -135,6 +137,39 @@ export function buildProgram(): Command {
       await runRestore({ service: opts.service, yes: opts.yes, interactive: canPrompt() });
     });
 
+  program
+    .command("diagnose")
+    .alias("doctor")
+    .description("diagnose the network: speed, latency, packet loss, MTU, Wi-Fi, DNS")
+    .option("--no-speedtest", "skip the download speedtest")
+    .option("--no-mtu", "skip the path-MTU probe")
+    .option("--json", "output machine-readable JSON")
+    .action(async (opts) => {
+      await runDiagnose({
+        noSpeedtest: opts.speedtest === false,
+        noMtu: opts.mtu === false,
+        json: opts.json,
+      });
+    });
+
+  program
+    .command("optimize")
+    .alias("optimise")
+    .description("diagnose, apply auto-fixes, then re-test (before/after)")
+    .option("--no-speedtest", "skip the download speedtest (both snapshots)")
+    .option("--no-mtu", "skip the path-MTU probe")
+    .option("--no-retest", "skip the second snapshot")
+    .option("-y, --yes", "apply every offered fix without confirming")
+    .action(async (opts) => {
+      await runOptimize({
+        noSpeedtest: opts.speedtest === false,
+        noMtu: opts.mtu === false,
+        noRetest: opts.retest === false,
+        yes: opts.yes,
+        interactive: canPrompt(),
+      });
+    });
+
   const list = program.command("list").description("manage the DNS provider catalog");
   list
     .command("show", { isDefault: true })
@@ -171,6 +206,8 @@ Examples:
   $ bestdns benchmark -g security rank ad-blocking providers
   $ bestdns apply cloudflare      apply Cloudflare DNS
   $ bestdns current               show the active DNS
+  $ bestdns diagnose              full network diagnostic (speed, MTU, Wi-Fi, DNS)
+  $ bestdns optimize              diagnose, apply fixes, then re-test before/after
   $ bestdns health quad9          capability check for one provider
   $ bestdns restore               revert to automatic (DHCP)
 `,
