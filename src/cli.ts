@@ -5,8 +5,10 @@ import { runBenchmark } from "./commands/benchmark";
 import { runCurrent } from "./commands/current";
 import { runDiagnose } from "./commands/diagnose";
 import { runHealth } from "./commands/health";
+import { runHogs } from "./commands/hogs";
 import { runList } from "./commands/list";
 import { runOptimize } from "./commands/optimize";
+import { runProfiles } from "./commands/profiles";
 import { runRestore } from "./commands/restore";
 import { runInteractiveMenu } from "./menu";
 import type { ProviderGroup } from "./types";
@@ -170,6 +172,40 @@ export function buildProgram(): Command {
       });
     });
 
+  program
+    .command("hogs")
+    .alias("top")
+    .description("list the processes generating the most network traffic (info only)")
+    .option("-t, --top <n>", "show only the top N processes (default 10)", parsePositiveInt)
+    .option("--json", "output machine-readable JSON")
+    .action(async (opts) => {
+      await runHogs({ top: opts.top, json: opts.json });
+    });
+
+  const profiles = program
+    .command("profiles")
+    .description("manage saved Wi-Fi networks / locations / NM connections");
+  profiles
+    .command("list", { isDefault: true })
+    .description("list every saved network profile")
+    .option("--json", "output machine-readable JSON")
+    .action(async (opts) => {
+      await runProfiles("list", { json: opts.json });
+    });
+  profiles
+    .command("remove")
+    .argument("[name]", "profile name (omit to choose interactively)")
+    .description("remove a single saved profile")
+    .action(async (name) => {
+      await runProfiles("remove", { name, interactive: canPrompt() });
+    });
+  profiles
+    .command("prune")
+    .description("multi-select stale profiles and remove them in one go")
+    .action(async () => {
+      await runProfiles("prune", { interactive: canPrompt() });
+    });
+
   const list = program.command("list").description("manage the DNS provider catalog");
   list
     .command("show", { isDefault: true })
@@ -208,6 +244,8 @@ Examples:
   $ bestdns current               show the active DNS
   $ bestdns diagnose              full network diagnostic (speed, MTU, Wi-Fi, DNS)
   $ bestdns optimize              diagnose, apply fixes, then re-test before/after
+  $ bestdns hogs                  list the processes generating the most traffic
+  $ bestdns profiles prune        clean up stale Wi-Fi / network profiles
   $ bestdns health quad9          capability check for one provider
   $ bestdns restore               revert to automatic (DHCP)
 `,

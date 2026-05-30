@@ -5,12 +5,29 @@ import { runBenchmark } from "./commands/benchmark";
 import { runCurrent } from "./commands/current";
 import { runDiagnose } from "./commands/diagnose";
 import { runHealth } from "./commands/health";
+import { runHogs } from "./commands/hogs";
 import { type ListAction, runList } from "./commands/list";
 import { runOptimize } from "./commands/optimize";
+import { type ProfilesAction, runProfiles } from "./commands/profiles";
 import { runRestore } from "./commands/restore";
 import { guard } from "./ui/prompts";
 import { c } from "./ui/theme";
 import { VERSION } from "./version";
+
+/** Sub-menu for managing saved network profiles. */
+async function profilesMenu(): Promise<void> {
+  const action = guard(
+    await p.select<ProfilesAction>({
+      message: "Manage saved network profiles",
+      options: [
+        { value: "list", label: "📖 List every saved profile" },
+        { value: "prune", label: "🧹 Prune stale profiles (multi-select)" },
+        { value: "remove", label: "🗑  Remove a single profile" },
+      ],
+    }),
+  );
+  await runProfiles(action, { interactive: true });
+}
 
 /** Sub-menu for managing the provider catalog. */
 async function listMenu(): Promise<void> {
@@ -45,11 +62,13 @@ export async function runInteractiveMenu(): Promise<void> {
           { value: "auto", label: "⚡ Auto — benchmark & apply the fastest", hint: "recommended" },
           { value: "optimize", label: "🛠  Optimize network — diagnose, fix, re-test" },
           { value: "diagnose", label: "🔬 Diagnose network — read-only report" },
+          { value: "hogs", label: "🐷 Top network-hungry processes" },
           { value: "benchmark", label: "🔍 Benchmark DNS providers" },
           { value: "current", label: "📡 Show current DNS" },
           { value: "apply", label: "🎯 Apply a DNS provider" },
           { value: "health", label: "🩺 Health & capability check" },
           { value: "list", label: "📋 Manage provider list" },
+          { value: "profiles", label: "🧹 Manage saved network profiles" },
           { value: "restore", label: "↩️  Restore DNS to automatic" },
           { value: "exit", label: "👋 Exit" },
         ],
@@ -66,6 +85,9 @@ export async function runInteractiveMenu(): Promise<void> {
       case "diagnose":
         await runDiagnose();
         break;
+      case "hogs":
+        await runHogs();
+        break;
       case "benchmark":
         await runBenchmark({ interactive: true });
         break;
@@ -80,6 +102,9 @@ export async function runInteractiveMenu(): Promise<void> {
         break;
       case "list":
         await listMenu();
+        break;
+      case "profiles":
+        await profilesMenu();
         break;
       case "restore":
         await runRestore({ interactive: true });

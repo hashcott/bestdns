@@ -1,10 +1,12 @@
 import { getBackend, pickService } from "../../os";
 import { timedQuery } from "../resolver";
+import { detectBandwidthHogs } from "./bandwidth";
 import { meanLatency, measureLatency } from "./latency";
 import { detectMtu } from "./mtu";
 import { measurePacketLoss } from "./packetloss";
 import { pingAvailable } from "./ping";
 import { runSpeedtest } from "./speedtest";
+import { detectStaleProfiles } from "./stale-profiles";
 import type { DiagnoseReport, Finding, NetworkSnapshot, SpeedtestResult, WifiInfo } from "./types";
 import { getWifiInfo } from "./wifi";
 
@@ -94,7 +96,7 @@ export async function takeSnapshot(options: SnapshotOptions = {}): Promise<Netwo
 // ───────── Findings ───────────────────────────────────────────────────
 
 /** Inspect a snapshot and produce a prioritised list of findings. */
-export function analyse(snapshot: NetworkSnapshot): Finding[] {
+export async function analyse(snapshot: NetworkSnapshot): Promise<Finding[]> {
   const findings: Finding[] = [];
 
   // 1. Download throughput.
@@ -313,13 +315,49 @@ export function analyse(snapshot: NetworkSnapshot): Finding[] {
     });
   }
 
+  // 9. Stale network profiles (informational only — too risky to auto-remove).
+  const staleProfiles = await detectStaleProfiles();
+  if (staleProfiles.length > 0) {
+    const names = staleProfiles
+      .slice(0, 3)
+      .map((p) => `"${p.name}" (${p.reason})`)
+      .join(", ");
+    const more = staleProfiles.length > 3 ? ` and ${staleProfiles.length - 3} more` : "";
+    findings.push({
+      id: "stale-profiles",
+      title: `${staleProfiles.length} stale network profile(s) found`,
+      severity: "info",
+      detail: `${names}${more} — consider removing unused profiles to reduce clutter.`,
+      suggestion:
+        "Review and remove unused network profiles manually via System Settings (macOS), nmcli (Linux), or Network Adapters (Windows).",
+    });
+  }
+
+  // 10. Bandwidth-hogging processes (informational only).
+  const hogs = await detectBandwidthHogs();
+  if (hogs.length > 0) {
+    const top = hogs
+      .slice(0, 3)
+      .map((h) => `${h.process} (${h.connections} conn)`)
+      .join(", ");
+    findings.push({
+      id: "bandwidth-hogs",
+      title: "Processes with many active network connections",
+      severity: "info",
+      detail: `Top network-active processes: ${top}.`,
+      suggestion:
+        "If bandwidth is low, check whether these processes are consuming excessive bandwidth. Use Activity Monitor (macOS), nethogs (Linux), or Task Manager (Windows) for detailed per-process bandwidth.",
+    });
+  }
+
   return findings;
 }
 
 /** Take a snapshot and analyse it in one call. */
 export async function diagnose(options: SnapshotOptions = {}): Promise<DiagnoseReport> {
   const snapshot = await takeSnapshot(options);
-  return { snapshot, findings: analyse(snapshot) };
+  const findings = await analyse(snapshot);
+  return { snapshot, findings };
 }
 
 /** Whether the local `ping` binary is available (needed for most checks). */

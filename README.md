@@ -33,6 +33,8 @@ npx bestdns
 - [Commands](#commands)
   - [`bestdns optimize`](#bestdns-optimize) — full optimization flow
   - [`bestdns diagnose`](#bestdns-diagnose) — read-only checkup
+  - [`bestdns hogs`](#bestdns-hogs) — top network-hungry processes
+  - [`bestdns profiles`](#bestdns-profiles) — manage saved network profiles
 - [Provider catalog](#provider-catalog)
 - [Health checks](#health-checks)
 - [Configuration & data files](#configuration--data-files)
@@ -78,6 +80,10 @@ supports DNS-over-HTTPS — so "fastest" isn't the only thing you optimise for.
 - 🔬 **Diagnose** — read-only network checkup: download speed, latency, packet loss,
   path MTU, Wi-Fi signal, and current DNS performance, all with severity-ranked
   findings.
+- 🐷 **Hogs** — list the top processes generating the most network traffic so you
+  can spot the culprit yourself. Informational only — bestdns never kills processes.
+- 🧹 **Profiles** — list, remove or bulk-prune saved Wi-Fi networks, macOS network
+  locations and NetworkManager connections.
 - 🔍 **Benchmark** — measures latency, jitter and reliability across a curated catalog
   of public resolvers and ranks them fastest-first.
 - ⚡ **Auto** — benchmark and apply the fastest provider in a single command.
@@ -180,6 +186,8 @@ bestdns apply cloudflare --dry-run
 | `bestdns` | Open the interactive menu |
 | `bestdns optimize` | Diagnose, apply auto-fixes, re-test (before/after) |
 | `bestdns diagnose` | Read-only network checkup (alias: `doctor`) |
+| `bestdns hogs` | Top network-hungry processes (alias: `top`) |
+| `bestdns profiles` | Manage saved Wi-Fi / location / NM-connection profiles |
 | `bestdns auto` | Benchmark every provider and apply the fastest |
 | `bestdns benchmark` | Benchmark providers and rank them by speed |
 | `bestdns apply <provider>` | Apply a DNS provider to your network |
@@ -272,6 +280,65 @@ Current DNS   8.8.8.8, 8.8.4.4 (30 ms avg)
 │ ✔ │ OK      │ Current DNS is fast            │ Current resolver averages 30 ms.    │
 └───┴─────────┴────────────────────────────────┴─────────────────────────────────────┘
 ```
+
+### `bestdns hogs`
+
+Lists the processes currently generating the most network traffic. **Informational
+only** — bestdns never kills, throttles or sandboxes anything; you decide.
+
+```text
+-t, --top <n>            show only the top N processes (default 10)
+    --json               output machine-readable JSON
+```
+
+```bash
+bestdns hogs                               # top 10 by bytes (mac) / connections (Linux/Win)
+bestdns hogs --top 3                       # only the loudest 3
+bestdns hogs --json | jq '.hogs[0]'        # script-friendly
+bestdns top                                # alias
+```
+
+| OS | Mechanism | Metric |
+| --- | --- | --- |
+| **macOS** | `nettop -P -L 1 -J bytes_in,bytes_out -x` | Cumulative bytes received / sent per process |
+| **Linux** | `ss -tunap` | Established TCP connections per process (re-run with sudo to resolve names) |
+| **Windows** | `Get-NetTCPConnection \| Group-Object OwningProcess` | Established TCP connections per process |
+
+Example output:
+
+```text
+┌───────┬─────────────────┬─────────┬─────────┬─────────┐
+│ PID   │ Process         │ Recv    │ Sent    │ Total   │
+├───────┼─────────────────┼─────────┼─────────┼─────────┤
+│ 90801 │ Google Chrome H │ 67.6 MB │ 873 KB  │ 68.5 MB │
+│ 44194 │ com.aikido.endp │ 12.7 MB │ 45.5 MB │ 58.3 MB │
+│ 541   │ com.crowdstrike │ 2.2 MB  │ 36.4 MB │ 38.7 MB │
+└───────┴─────────────────┴─────────┴─────────┴─────────┘
+```
+
+### `bestdns profiles`
+
+Manage every saved network credential the OS knows about: Wi-Fi networks, macOS
+network locations, NetworkManager connections. Two flavours of cleanup — a
+single-item `remove` and an interactive multi-select `prune`.
+
+```bash
+bestdns profiles                           # list every saved profile (default: list)
+bestdns profiles list --json               # JSON output
+bestdns profiles remove "Old Coffee Shop"  # remove a single Wi-Fi / connection
+bestdns profiles remove                    # interactive picker
+bestdns profiles prune                     # multi-select stale ones, bulk remove
+```
+
+| OS | Lists | Removes via |
+| --- | --- | --- |
+| **macOS** | Preferred Wi-Fi networks + network locations | `networksetup -removepreferredwirelessnetwork` / `-deletelocation` (sudo) |
+| **Linux** | All `NetworkManager` connections | `nmcli connection delete <name>` (sudo) |
+| **Windows** | Saved WLAN profiles | `netsh wlan delete profile name="<name>"` (elevated) |
+
+Active profiles (the Wi-Fi you're currently on, the active location) are flagged
+and excluded from `prune` so they can't be removed accidentally — use the
+explicit `remove <name>` form if you really mean it.
 
 ### `bestdns benchmark`
 
@@ -549,10 +616,10 @@ Ideas welcome — open an issue if you want to take any of these on:
 
 - [x] End-to-end network optimization flow (`optimize`) — shipped in 1.1.0
 - [x] Read-only diagnostic mode (`diagnose`) — shipped in 1.1.0
+- [x] Bandwidth-hog process listing (`hogs`) — shipped in 1.2.0
+- [x] Network locations / Wi-Fi profile cleanup helpers (`profiles`) — shipped in 1.2.0
 - [ ] Wi-Fi info on modern macOS via `wdutil` / `SPAirPortDataType` JSON
       (`airport -I` was removed in recent versions)
-- [ ] Bandwidth-hog process listing (`nettop` / `nethogs` / `Get-NetTCPConnection`)
-- [ ] Network locations / Wi-Fi profile cleanup helpers
 - [ ] DoT / DoH apply on macOS via configuration profiles
 - [ ] DoH benchmarking as a first-class result column
 - [ ] Per-network-profile presets ("work", "home", "travel")
