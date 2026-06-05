@@ -1,3 +1,11 @@
+# [1.2.0](https://github.com/hashcott/bestdns/compare/v1.1.1...v1.2.0) (2026-06-05)
+
+
+### Features
+
+* add hogs and profiles commands for full /optimize-network coverage ([656f19f](https://github.com/hashcott/bestdns/commit/656f19f4b75c8a1c7225b1280163c478ecd2e869))
+* **optimize:** integrate hogs and profile cleanup; drop redundant bandwidth.ts ([88524bf](https://github.com/hashcott/bestdns/commit/88524bffe9e3699b37718beab965bb7e33bc246e))
+
 ## [1.1.1](https://github.com/hashcott/bestdns/compare/v1.1.0...v1.1.1) (2026-05-29)
 
 
