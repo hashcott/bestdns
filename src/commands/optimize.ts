@@ -7,6 +7,7 @@ import { renderComparison, renderFindings, renderSnapshot } from "../ui/findings
 import { guard } from "../ui/prompts";
 import { icons } from "../ui/theme";
 import { runAuto } from "./auto";
+import { runProfiles } from "./profiles";
 
 /** Options for the `optimize` command. */
 export interface OptimizeCommandOptions {
@@ -36,6 +37,12 @@ async function applyFix(fixId: FixId): Promise<string> {
     case "restart-mdns": {
       const result = await restartMdns();
       return result.message;
+    }
+    case "prune-profiles": {
+      // Hands off to the existing interactive multi-select picker — never
+      // bulk-removes silently.
+      await runProfiles("prune", { interactive: true });
+      return "Profiles cleanup complete.";
     }
   }
 }

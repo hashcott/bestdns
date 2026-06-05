@@ -1,13 +1,14 @@
 import { getBackend, pickService } from "../../os";
 import { timedQuery } from "../resolver";
-import { detectBandwidthHogs } from "./bandwidth";
+import { listHogs } from "./hogs";
 import { meanLatency, measureLatency } from "./latency";
 import { detectMtu } from "./mtu";
 import { measurePacketLoss } from "./packetloss";
 import { pingAvailable } from "./ping";
+import { listProfiles } from "./profiles";
 import { runSpeedtest } from "./speedtest";
 import { detectStaleProfiles } from "./stale-profiles";
-import type { DiagnoseReport, Finding, NetworkSnapshot, SpeedtestResult, WifiInfo } from "./types";
+import type { DiagnoseReport, Finding, NetworkSnapshot, SpeedtestResult } from "./types";
 import { getWifiInfo } from "./wifi";
 
 /** Options controlling which parts of `takeSnapshot` to run. */
@@ -315,7 +316,7 @@ export async function analyse(snapshot: NetworkSnapshot): Promise<Finding[]> {
     });
   }
 
-  // 9. Stale network profiles (informational only — too risky to auto-remove).
+  // 9. Disabled / orphaned network services (informational — too risky to auto-remove).
   const staleProfiles = await detectStaleProfiles();
   if (staleProfiles.length > 0) {
     const names = staleProfiles
@@ -324,29 +325,54 @@ export async function analyse(snapshot: NetworkSnapshot): Promise<Finding[]> {
       .join(", ");
     const more = staleProfiles.length > 3 ? ` and ${staleProfiles.length - 3} more` : "";
     findings.push({
-      id: "stale-profiles",
-      title: `${staleProfiles.length} stale network profile(s) found`,
+      id: "stale-services",
+      title: `${staleProfiles.length} disabled network service(s)`,
       severity: "info",
-      detail: `${names}${more} — consider removing unused profiles to reduce clutter.`,
+      detail: `${names}${more} — clutter in System Settings → Network.`,
       suggestion:
-        "Review and remove unused network profiles manually via System Settings (macOS), nmcli (Linux), or Network Adapters (Windows).",
+        "Remove via System Settings → Network (macOS), nmcli (Linux), or Network Adapters (Windows).",
     });
   }
 
-  // 10. Bandwidth-hogging processes (informational only).
-  const hogs = await detectBandwidthHogs();
-  if (hogs.length > 0) {
-    const top = hogs
-      .slice(0, 3)
-      .map((h) => `${h.process} (${h.connections} conn)`)
+  // 10. Many saved Wi-Fi networks / NM connections — offer to prune in bulk.
+  const profilesResult = await listProfiles();
+  if (profilesResult.ok) {
+    const savedCount = profilesResult.profiles.filter((p) => !p.active).length;
+    if (savedCount > 5) {
+      findings.push({
+        id: "many-saved-profiles",
+        title: `${savedCount} saved network profile(s) you may never use again`,
+        severity: "info",
+        detail:
+          "Old Wi-Fi networks and connection profiles can clutter your network UI and " +
+          "occasionally cause unwanted auto-connects.",
+        fixable: true,
+        fixId: "prune-profiles",
+      });
+    }
+  }
+
+  // 11. Network-hungry processes (informational only — `bestdns hogs` for the full list).
+  const hogsResult = await listHogs(3);
+  if (hogsResult.ok && hogsResult.hogs.length > 0) {
+    const hasBytes = hogsResult.hogs.some((h) => h.bytesIn !== undefined);
+    const top = hogsResult.hogs
+      .map((h) => {
+        const total = (h.bytesIn ?? 0) + (h.bytesOut ?? 0);
+        if (hasBytes && total > 0) {
+          const mb = total / 1024 / 1024;
+          return `${h.process} (${mb >= 100 ? mb.toFixed(0) : mb.toFixed(1)} MB)`;
+        }
+        return `${h.process} (${h.connections ?? 0} conn)`;
+      })
       .join(", ");
     findings.push({
       id: "bandwidth-hogs",
-      title: "Processes with many active network connections",
+      title: "Top network-hungry processes",
       severity: "info",
-      detail: `Top network-active processes: ${top}.`,
+      detail: `${top}.`,
       suggestion:
-        "If bandwidth is low, check whether these processes are consuming excessive bandwidth. Use Activity Monitor (macOS), nethogs (Linux), or Task Manager (Windows) for detailed per-process bandwidth.",
+        "Run `bestdns hogs` for the full list. bestdns never kills processes — close them yourself with Activity Monitor / Task Manager / `kill <PID>`.",
     });
   }
 

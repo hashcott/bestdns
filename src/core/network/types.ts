@@ -2,7 +2,7 @@
 export type Severity = "ok" | "info" | "warning" | "issue";
 
 /** Stable identifier for an automatic fix `bestdns` can perform. */
-export type FixId = "swap-dns" | "flush-dns-cache" | "restart-mdns";
+export type FixId = "swap-dns" | "flush-dns-cache" | "restart-mdns" | "prune-profiles";
 
 /** A single observation produced by `diagnose`. */
 export interface Finding {
